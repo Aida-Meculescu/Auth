@@ -1,4 +1,5 @@
 const express = require('express');
+const bcrypt = require('bcryptjs')
 
 const db = require('../data/database');
 
@@ -16,14 +17,48 @@ router.get('/login', function (req, res) {
   res.render('login');
 });
 
-router.post('/signup', async function (req, res) {});
+router.post('/signup', async function (req, res) {
+  const userData = req.body
+  const enteredEmail = userData.email
+  const enteredConfirmEmail = userData['confirm-email']
+  const enteredPassword = userData.password
 
-router.post('/login', async function (req, res) {});
+  const hashedPassword = await bcrypt.hash(enteredPassword, 12)
+
+  const user = {
+    email: enteredEmail,
+    password: hashedPassword
+  }
+
+  await db.getDb().collection('users').insertOne(user)
+
+  res.redirect('/login')
+});
+
+router.post('/login', async function (req, res) {
+  const userData = req.body
+  const enteredEmail = userData.email
+  const enteredPassword = userData.password
+
+  const existingUser = await db.getDb().collection('users').findOne({ email: enteredEmail }) // if no email is found it will return null
+
+  if (!existingUser) {
+    console.log('Could not log in!')
+    return res.redirect('/login')
+  }
+
+  const passwordsAreEqual = await bcrypt.compare(enteredPassword, existingUser.password)
+
+  if (!passwordsAreEqual) {
+    console.log('Could not log in - passwords are not equal!')
+    return res.redirect('/login')
+  }
+});
 
 router.get('/admin', function (req, res) {
   res.render('admin');
 });
 
-router.post('/logout', function (req, res) {});
+router.post('/logout', function (req, res) { });
 
 module.exports = router;
