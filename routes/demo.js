@@ -23,6 +23,25 @@ router.post('/signup', async function (req, res) {
   const enteredConfirmEmail = userData['confirm-email']
   const enteredPassword = userData.password
 
+  if (
+    !enteredEmail ||
+    !enteredConfirmEmail ||
+    !enteredPassword ||
+    enteredPassword.trim() < 6 ||
+    enteredEmail !== enteredConfirmEmail ||
+    !enteredEmail.includes('@')
+  ) {
+    console.log('Incorrect data')
+    return res.redirect('/signup')
+  }
+
+  const existingUser = await db.getDb().collection('users').findOne({ email: enteredEmail })
+
+  if (existingUser) {
+    console.log('User exists already')
+    return res.redirect('/signup')
+  }
+
   const hashedPassword = await bcrypt.hash(enteredPassword, 12)
 
   const user = {
@@ -54,14 +73,27 @@ router.post('/login', async function (req, res) {
     return res.redirect('/login')
   }
 
-  console.log('User is authenticated')
-  res.redirect('/admin')
+  // console.log('User is authenticated')
+  req.session.user = { id: existingUser._id, email: existingUser.email }  //update session
+  req.session.isAuthenticated = true
+  req.session.save(function () { // save the session then redirect
+    res.redirect('/admin') // redirect work faster so we need to include in tha callback to ensure that the data is save before redirecting to a specific page!
+  })
+
+
 });
 
 router.get('/admin', function (req, res) {
+  if (!req.session.isAuthenticated) {
+    return res.status(401).render('401')
+  }
   res.render('admin');
 });
 
-router.post('/logout', function (req, res) { });
+router.post('/logout', function (req, res) {
+  req.session.user = null
+  req.session.isAuthenticated = false // we delete the data but we do not delete the session
+  res.redirect('/')
+});
 
 module.exports = router;
