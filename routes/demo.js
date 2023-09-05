@@ -92,7 +92,7 @@ router.get('/admin', function (req, res) {
 
 router.post('/logout', function (req, res) {
   req.session.user = null
-  req.session.isAuthenticated = false // we delete the data but we do not delete the session
+  req.session.isAuthenticated = false // we update the data but we do not delete the session
   res.redirect('/')
 });
 
