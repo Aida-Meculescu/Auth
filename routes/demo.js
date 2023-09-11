@@ -103,17 +103,30 @@ router.post('/login', async function (req, res) {
   req.session.user = { id: existingUser._id, email: existingUser.email }  //update session
   req.session.isAuthenticated = true
   req.session.save(function () { // save the session then redirect
-    res.redirect('/admin') // redirect work faster so we need to include in tha callback to ensure that the data is save before redirecting to a specific page!
+    res.redirect('/profile') // redirect work faster so we need to include in tha callback to ensure that the data is save before redirecting to a specific page!
   })
 
 
 });
 
-router.get('/admin', function (req, res) {
+router.get('/admin', async function (req, res) {
   if (!req.session.isAuthenticated) {
     return res.status(401).render('401')
   }
+
+  const user = await db.getDb().collection('users').findOne({ _id: req.session.user.id })
+  if (!user || !user.isAdmin) {
+    return res.status(403).render('403');  // status 403 if for users that are authenticated but they do not have authorization
+  }
   res.render('admin');
+});
+
+router.get('/profile', function (req, res) {
+  if (!req.session.isAuthenticated) {
+    // if (!req.session.user)
+    return res.status(401).render('401');
+  }
+  res.render('profile');
 });
 
 router.post('/logout', function (req, res) {
