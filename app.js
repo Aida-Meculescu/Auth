@@ -31,7 +31,7 @@ app.use(session({
   store: sessionStore
 }))
 
-app.use(async function (req, res, next) {
+app.use(async function (req, res, next) { // custom middleware!
   const user = req.session.user
   const isAuth = req.session.isAuthenticated
 
